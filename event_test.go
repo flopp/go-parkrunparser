@@ -45,7 +45,7 @@ func loadParkrunSimple(t *testing.T, fileName string) *Event {
 	return &event
 }
 
-func loadParkrun(t *testing.T, fileName string, index int, dateStr string, runners int, volunteers int) *Event {
+func loadParkrun(t *testing.T, fileName string, index int, dateStr string, finishers int, volunteers int) *Event {
 	event := loadParkrunSimple(t, fileName)
 	if event == nil {
 		return nil
@@ -66,8 +66,8 @@ func loadParkrun(t *testing.T, fileName string, index int, dateStr string, runne
 		return nil
 	}
 
-	if len(event.Runners) != runners {
-		t.Errorf("%s: unexpected number of runners: %d, expected: %d", fileName, len(event.Runners), runners)
+	if len(event.Finishers) != finishers {
+		t.Errorf("%s: unexpected number of finishers: %d, expected: %d", fileName, len(event.Finishers), finishers)
 		return nil
 	}
 
@@ -81,8 +81,8 @@ func loadParkrun(t *testing.T, fileName string, index int, dateStr string, runne
 
 func TestParse(t *testing.T) {
 	event := loadParkrun(t, "test-data/de-dietenbach-53.gz", 53, "2022-11-05", 20, 9)
-	if event.Runners[0].Name != "Daniel THOMA" {
-		t.Errorf("unexpected name of first finisher: %s, expected: %s", event.Runners[0].Name, "Daniel THOMA")
+	if event.Finishers[0].Name != "Daniel THOMA" {
+		t.Errorf("unexpected name of first finisher: %s, expected: %s", event.Finishers[0].Name, "Daniel THOMA")
 	}
 
 	loadParkrun(t, "test-data/dk-amagerstrandpark-560.gz", 560, "2024-03-16", 45, 4)

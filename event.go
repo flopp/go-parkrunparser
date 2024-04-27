@@ -22,10 +22,12 @@ type Runner struct {
 }
 
 type Event struct {
-	Index      int
-	Date       time.Time
-	Runners    []Runner
-	Volunteers []Parkrunner
+	Index              int
+	Date               time.Time
+	NumberOfFinishers  int
+	NumberOfVolunteers int
+	Finishers          []Runner
+	Volunteers         []Parkrunner
 }
 
 func parseDate(s string) (time.Time, error) {
@@ -98,14 +100,15 @@ func ParseEvent(data string) (Event, error) {
 				}
 			}
 
-			event.Runners = append(event.Runners, Runner{&Parkrunner{id, name}, ageGroup, runTime, achievement})
+			event.Finishers = append(event.Finishers, Runner{&Parkrunner{id, name}, ageGroup, runTime, achievement})
 		} else if match := reRunnerRowUnknown.FindStringSubmatch(match0[0]); match != nil {
 			name := html.UnescapeString(match[1])
-			event.Runners = append(event.Runners, Runner{&Parkrunner{"", name}, AgeGroup{}, 0, AchievementNone})
+			event.Finishers = append(event.Finishers, Runner{&Parkrunner{"", name}, AgeGroup{}, 0, AchievementNone})
 		} else {
 			return Event{}, fmt.Errorf("runner row %d - invalid format: %s", row, match0[0])
 		}
 	}
+	event.NumberOfFinishers = len(event.Finishers)
 
 	// volunteers
 	for _, match := range reVolunteerRow.FindAllStringSubmatch(data, -1) {
@@ -113,6 +116,7 @@ func ParseEvent(data string) (Event, error) {
 		name := html.UnescapeString(match[2])
 		event.Volunteers = append(event.Volunteers, Parkrunner{id, name})
 	}
+	event.NumberOfVolunteers = len(event.Volunteers)
 
 	return event, nil
 }
