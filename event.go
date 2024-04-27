@@ -5,7 +5,6 @@ import (
 	"html"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -14,7 +13,7 @@ type Parkrunner struct {
 	Name string
 }
 
-type Runner struct {
+type Finisher struct {
 	*Parkrunner
 	AgeGroup    AgeGroup
 	Time        time.Duration
@@ -26,28 +25,8 @@ type Event struct {
 	Date               time.Time
 	NumberOfFinishers  int
 	NumberOfVolunteers int
-	Finishers          []Runner
+	Finishers          []Finisher
 	Volunteers         []Parkrunner
-}
-
-func parseDate(s string) (time.Time, error) {
-	return time.Parse("02/01/2006", s)
-}
-
-func parseDuration(s string) (time.Duration, error) {
-	split := strings.Split(s, ":")
-
-	// hh:mm::ss
-	if len(split) == 3 {
-		return time.ParseDuration(fmt.Sprintf("%sh%sm%ss", split[0], split[1], split[2]))
-	}
-
-	// mm::ss
-	if len(split) == 2 {
-		return time.ParseDuration(fmt.Sprintf("%sm%ss", split[0], split[1]))
-	}
-
-	return 0, fmt.Errorf("cannot parse duration: %s", s)
 }
 
 var reDateIndex = regexp.MustCompile(`<h3><span class="format-date">([^<]+)</span><span class="spacer">[^<]*</span><span>#([0-9]+)</span></h3>`)
@@ -65,7 +44,7 @@ func ParseEvent(data string) (Event, error) {
 
 	// date, index
 	if match := reDateIndex.FindStringSubmatch(data); match != nil {
-		if date, err := parseDate(match[1]); err == nil {
+		if date, err := ParseDate(match[1]); err == nil {
 			event.Date = date
 		} else {
 			return Event{}, fmt.Errorf("cannot parse event date '%s': %w", match[1], err)
@@ -94,16 +73,16 @@ func ParseEvent(data string) (Event, error) {
 			id := match[6]
 			var runTime time.Duration = 0
 			if matchTime := reTime.FindStringSubmatch(match0[0]); matchTime != nil {
-				runTime, err = parseDuration(matchTime[1])
+				runTime, err = ParseDuration(matchTime[1])
 				if err != nil {
 					return Event{}, fmt.Errorf("runner row %d - while parsing time: %w", row, err)
 				}
 			}
 
-			event.Finishers = append(event.Finishers, Runner{&Parkrunner{id, name}, ageGroup, runTime, achievement})
+			event.Finishers = append(event.Finishers, Finisher{&Parkrunner{id, name}, ageGroup, runTime, achievement})
 		} else if match := reRunnerRowUnknown.FindStringSubmatch(match0[0]); match != nil {
 			name := html.UnescapeString(match[1])
-			event.Finishers = append(event.Finishers, Runner{&Parkrunner{"", name}, AgeGroup{}, 0, AchievementNone})
+			event.Finishers = append(event.Finishers, Finisher{&Parkrunner{"", name}, AgeGroup{}, 0, AchievementNone})
 		} else {
 			return Event{}, fmt.Errorf("runner row %d - invalid format: %s", row, match0[0])
 		}

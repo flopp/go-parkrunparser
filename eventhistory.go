@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"time"
 )
 
 type EventHistory struct {
@@ -41,7 +40,7 @@ func ParseEventHistory(data string) (EventHistory, error) {
 			return history, fmt.Errorf("row %d: invalid index '%d'; must be >= 1 and <= %d", row, index, count)
 		}
 
-		date, err := time.Parse("02/01/2006", match[2])
+		date, err := ParseDate(match[2])
 		if err != nil {
 			return history, fmt.Errorf("row %d: cannot parse event date from '%s': %v", row, match[2], err)
 		}
