@@ -13,9 +13,9 @@ type EventHistory struct {
 var patternNumberOfResults = regexp.MustCompile("<td class=\"Results-table-td Results-table-td--position\"><a href=\"\\.\\./(\\d+)\">(\\d+)</a></td>")
 var patternResultsRow = regexp.MustCompile(`<tr class="Results-table-row" data-parkrun="(\d+)" data-date="(\d+/\d+/\d+)" data-finishers="(\d+)" data-volunteers="(\d+)" data-male="([^"]*)" data-female="([^"]*)" data-maletime="(\d*)" data-femaletime="(\d*)">`)
 
-func ParseEventHistory(data string) (EventHistory, error) {
+func ParseEventHistory(buf []byte) (EventHistory, error) {
 	reNewline := regexp.MustCompile(`\r?\n`)
-	data = reNewline.ReplaceAllString(data, " ")
+	data := reNewline.ReplaceAllString(string(buf), " ")
 
 	var history EventHistory
 

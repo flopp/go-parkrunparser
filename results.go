@@ -36,9 +36,9 @@ var reRunnerRow = regexp.MustCompile(`^<tr class="Results-table-row" data-name="
 var reRunnerRowUnknown = regexp.MustCompile(`^<tr class="Results-table-row" data-name="([^"]*)" data-agegroup="" data-club="" data-position="\d+" data-runs="0" data-agegrade="0" data-achievement=""><td class="Results-table-td Results-table-td--position">\d+</td><td class="Results-table-td Results-table-td--name"><div class="compact">.*`)
 var reTime = regexp.MustCompile(`Results-table-td--time[^"]*&#10;                      "><div class="compact">(\d?:?\d\d:\d\d)</div>`)
 
-func ParseResults(data string) (Results, error) {
+func ParseResults(buf []byte) (Results, error) {
 	reNewline := regexp.MustCompile(`\r?\n`)
-	data = reNewline.ReplaceAllString(data, " ")
+	data := reNewline.ReplaceAllString(string(buf), " ")
 
 	var event Results
 

@@ -36,7 +36,7 @@ func loadParkrunSimple(t *testing.T, fileName string) *Results {
 		return nil
 	}
 
-	event, err := ParseResults(string(data))
+	event, err := ParseResults(data)
 	if err != nil {
 		t.Errorf("%s: failed to parse results: %v", fileName, err)
 		return nil

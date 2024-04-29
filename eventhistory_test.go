@@ -11,7 +11,7 @@ func TestParseEventHistory(t *testing.T) {
 		t.Errorf("failed to read file '%s': %v", fileName, err)
 	}
 
-	history, err := ParseEventHistory(string(data))
+	history, err := ParseEventHistory(data)
 	if err != nil {
 		t.Errorf("%s: failed to parse eventhistory: %v", fileName, err)
 	}
