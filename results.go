@@ -20,7 +20,7 @@ type Finisher struct {
 	Achievement Achievement
 }
 
-type Event struct {
+type Results struct {
 	Index              int
 	Date               time.Time
 	NumberOfFinishers  int
@@ -36,26 +36,26 @@ var reRunnerRow = regexp.MustCompile(`^<tr class="Results-table-row" data-name="
 var reRunnerRowUnknown = regexp.MustCompile(`^<tr class="Results-table-row" data-name="([^"]*)" data-agegroup="" data-club="" data-position="\d+" data-runs="0" data-agegrade="0" data-achievement=""><td class="Results-table-td Results-table-td--position">\d+</td><td class="Results-table-td Results-table-td--name"><div class="compact">.*`)
 var reTime = regexp.MustCompile(`Results-table-td--time[^"]*&#10;                      "><div class="compact">(\d?:?\d\d:\d\d)</div>`)
 
-func ParseEvent(data string) (Event, error) {
+func ParseResults(data string) (Results, error) {
 	reNewline := regexp.MustCompile(`\r?\n`)
 	data = reNewline.ReplaceAllString(data, " ")
 
-	var event Event
+	var event Results
 
 	// date, index
 	if match := reDateIndex.FindStringSubmatch(data); match != nil {
 		if date, err := ParseDate(match[1]); err == nil {
 			event.Date = date
 		} else {
-			return Event{}, fmt.Errorf("cannot parse event date '%s': %w", match[1], err)
+			return Results{}, fmt.Errorf("cannot parse event date '%s': %w", match[1], err)
 		}
 		if index, err := strconv.Atoi(match[2]); err == nil {
 			event.Index = index
 		} else {
-			return Event{}, fmt.Errorf("cannot parse event index '%s': %w", match[2], err)
+			return Results{}, fmt.Errorf("cannot parse event index '%s': %w", match[2], err)
 		}
 	} else {
-		return Event{}, fmt.Errorf("cannot find date/index header")
+		return Results{}, fmt.Errorf("cannot find date/index header")
 	}
 
 	// runners
@@ -64,18 +64,18 @@ func ParseEvent(data string) (Event, error) {
 			name := html.UnescapeString(match[1])
 			ageGroup, err := ParseAgeGroup(match[2])
 			if err != nil {
-				return Event{}, fmt.Errorf("runner row %d - while parsing age group: %w", row, err)
+				return Results{}, fmt.Errorf("runner row %d - while parsing age group: %w", row, err)
 			}
 			achievement, err := ParseAchievement(match[5])
 			if err != nil {
-				return Event{}, fmt.Errorf("runner row %d - while parsing achievement: %w", row, err)
+				return Results{}, fmt.Errorf("runner row %d - while parsing achievement: %w", row, err)
 			}
 			id := match[6]
 			var runTime time.Duration = 0
 			if matchTime := reTime.FindStringSubmatch(match0[0]); matchTime != nil {
 				runTime, err = ParseDuration(matchTime[1])
 				if err != nil {
-					return Event{}, fmt.Errorf("runner row %d - while parsing time: %w", row, err)
+					return Results{}, fmt.Errorf("runner row %d - while parsing time: %w", row, err)
 				}
 			}
 
@@ -84,7 +84,7 @@ func ParseEvent(data string) (Event, error) {
 			name := html.UnescapeString(match[1])
 			event.Finishers = append(event.Finishers, Finisher{&Parkrunner{"", name}, AgeGroup{}, 0, AchievementNone})
 		} else {
-			return Event{}, fmt.Errorf("runner row %d - invalid format: %s", row, match0[0])
+			return Results{}, fmt.Errorf("runner row %d - invalid format: %s", row, match0[0])
 		}
 	}
 	event.NumberOfFinishers = len(event.Finishers)

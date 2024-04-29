@@ -29,23 +29,23 @@ func readFile(fileName string) ([]byte, error) {
 	}
 }
 
-func loadParkrunSimple(t *testing.T, fileName string) *Event {
+func loadParkrunSimple(t *testing.T, fileName string) *Results {
 	data, err := readFile(fileName)
 	if err != nil {
 		t.Errorf("failed to read file '%s': %v", fileName, err)
 		return nil
 	}
 
-	event, err := ParseEvent(string(data))
+	event, err := ParseResults(string(data))
 	if err != nil {
-		t.Errorf("%s: failed to parse event: %v", fileName, err)
+		t.Errorf("%s: failed to parse results: %v", fileName, err)
 		return nil
 	}
 
 	return &event
 }
 
-func loadParkrun(t *testing.T, fileName string, index int, dateStr string, finishers int, volunteers int) *Event {
+func loadParkrun(t *testing.T, fileName string, index int, dateStr string, finishers int, volunteers int) *Results {
 	event := loadParkrunSimple(t, fileName)
 	if event == nil {
 		return nil
@@ -58,11 +58,11 @@ func loadParkrun(t *testing.T, fileName string, index int, dateStr string, finis
 	}
 
 	if event.Index != index {
-		t.Errorf("%s: unexpected event index: %d, expected: %d", fileName, event.Index, index)
+		t.Errorf("%s: unexpected results index: %d, expected: %d", fileName, event.Index, index)
 		return nil
 	}
 	if event.Date != date {
-		t.Errorf("%s: unexpected event date: %v, expected: %s", fileName, event.Date, dateStr)
+		t.Errorf("%s: unexpected results date: %v, expected: %s", fileName, event.Date, dateStr)
 		return nil
 	}
 

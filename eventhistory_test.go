@@ -16,7 +16,7 @@ func TestParseEventHistory(t *testing.T) {
 		t.Errorf("%s: failed to parse eventhistory: %v", fileName, err)
 	}
 
-	if len(history.Events) != 129 {
-		t.Errorf("%s: unexpected number of events: %d; expected: %d", fileName, len(history.Events), 129)
+	if len(history.Results) != 129 {
+		t.Errorf("%s: unexpected number of results: %d; expected: %d", fileName, len(history.Results), 129)
 	}
 }

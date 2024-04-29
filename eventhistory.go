@@ -7,11 +7,11 @@ import (
 )
 
 type EventHistory struct {
-	Events []*Event
+	Results []*Results
 }
 
-var patternNumberOfRuns = regexp.MustCompile("<td class=\"Results-table-td Results-table-td--position\"><a href=\"\\.\\./(\\d+)\">(\\d+)</a></td>")
-var patternRunRow = regexp.MustCompile(`<tr class="Results-table-row" data-parkrun="(\d+)" data-date="(\d+/\d+/\d+)" data-finishers="(\d+)" data-volunteers="(\d+)" data-male="([^"]*)" data-female="([^"]*)" data-maletime="(\d*)" data-femaletime="(\d*)">`)
+var patternNumberOfResults = regexp.MustCompile("<td class=\"Results-table-td Results-table-td--position\"><a href=\"\\.\\./(\\d+)\">(\\d+)</a></td>")
+var patternResultsRow = regexp.MustCompile(`<tr class="Results-table-row" data-parkrun="(\d+)" data-date="(\d+/\d+/\d+)" data-finishers="(\d+)" data-volunteers="(\d+)" data-male="([^"]*)" data-female="([^"]*)" data-maletime="(\d*)" data-femaletime="(\d*)">`)
 
 func ParseEventHistory(data string) (EventHistory, error) {
 	reNewline := regexp.MustCompile(`\r?\n`)
@@ -19,22 +19,22 @@ func ParseEventHistory(data string) (EventHistory, error) {
 
 	var history EventHistory
 
-	match := patternNumberOfRuns.FindStringSubmatch(data)
+	match := patternNumberOfResults.FindStringSubmatch(data)
 	if match == nil {
-		return history, fmt.Errorf("cannot find number of events")
+		return history, fmt.Errorf("cannot find number of results")
 	}
 
 	count, err := strconv.Atoi(match[1])
 	if err != nil || count < 0 {
-		return history, fmt.Errorf("cannot parse number of events from '%s': %v", match[1], err)
+		return history, fmt.Errorf("cannot parse number of results from '%s': %v", match[1], err)
 	}
 
-	history.Events = make([]*Event, count)
-	matches := patternRunRow.FindAllStringSubmatch(data, -1)
+	history.Results = make([]*Results, count)
+	matches := patternResultsRow.FindAllStringSubmatch(data, -1)
 	for row, match := range matches {
 		index, err := strconv.Atoi(match[1])
 		if err != nil {
-			return history, fmt.Errorf("row %d: cannot parse event index from '%s': %v", row, match[1], err)
+			return history, fmt.Errorf("row %d: cannot parse results index from '%s': %v", row, match[1], err)
 		}
 		if index <= 0 || index > count {
 			return history, fmt.Errorf("row %d: invalid index '%d'; must be >= 1 and <= %d", row, index, count)
@@ -42,28 +42,28 @@ func ParseEventHistory(data string) (EventHistory, error) {
 
 		date, err := ParseDate(match[2])
 		if err != nil {
-			return history, fmt.Errorf("row %d: cannot parse event date from '%s': %v", row, match[2], err)
+			return history, fmt.Errorf("row %d: cannot parse results date from '%s': %v", row, match[2], err)
 		}
 
 		finishers, err := strconv.Atoi(match[3])
 		if err != nil {
-			return history, fmt.Errorf("row %d: cannot parse numner of finishers from '%s': %v", row, match[3], err)
+			return history, fmt.Errorf("row %d: cannot parse number of finishers from '%s': %v", row, match[3], err)
 		}
 
 		volunteers, err := strconv.Atoi(match[4])
 		if err != nil {
-			return history, fmt.Errorf("row %d: cannot parse numner of volunteers from '%s': %v", row, match[4], err)
+			return history, fmt.Errorf("row %d: cannot parse number of volunteers from '%s': %v", row, match[4], err)
 		}
 
-		if history.Events[index-1] != nil {
-			return history, fmt.Errorf("row %d: duplicate event index %d", row, index)
+		if history.Results[index-1] != nil {
+			return history, fmt.Errorf("row %d: duplicate results index %d", row, index)
 		}
-		history.Events[index-1] = &Event{index, date, finishers, volunteers, nil, nil}
+		history.Results[index-1] = &Results{index, date, finishers, volunteers, nil, nil}
 	}
 
-	for index, event := range history.Events {
-		if event == nil {
-			return history, fmt.Errorf("missing event %d", index+1)
+	for index, results := range history.Results {
+		if results == nil {
+			return history, fmt.Errorf("missing results %d", index+1)
 		}
 	}
 
