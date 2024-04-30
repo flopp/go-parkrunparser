@@ -5,6 +5,43 @@ import (
 	"fmt"
 )
 
+type JCountry struct {
+	Url    string    `json:"url"`
+	Bounds []float64 `json:"bounds"`
+}
+
+type JGeometry struct {
+	Type        string    `json:"type"`
+	Coordinates []float64 `json:"coordinates"`
+}
+
+type JProperties struct {
+	Name              string `json:"eventname"`
+	LongName          string `json:"EventLongName"`
+	ShortName         string `json:"EventShortName"`
+	LocalizedLongName string `json:"LocalisedEventLongName"`
+	CountryCode       int    `json:"countrycode"`
+	SeriesId          int    `json:"seriesid"`
+	Location          string `json:"EventLocation"`
+}
+
+type JFeature struct {
+	Id         int         `json:"id"`
+	Type       string      `json:"type"`
+	Geometry   JGeometry   `json:"geometry"`
+	Properties JProperties `json:"properties"`
+}
+
+type JEvents struct {
+	Type     string     `json:"type"`
+	Features []JFeature `json:"features"`
+}
+
+type JEventsJson struct {
+	Counties map[string]JCountry `json:"countries"`
+	Events   JEvents             `json:"events"`
+}
+
 type LatLng struct {
 	Lat, Lng float64
 }
@@ -75,6 +112,11 @@ type Events struct {
 }
 
 func ParseEvents(data []byte) (Events, error) {
+	var eventsJson JEventsJson
+	if err := json.Unmarshal(data, &eventsJson); err != nil {
+		fmt.Printf("error unmarshalling: %v", err)
+	}
+
 	events := Events{}
 	events.Countries = make([]*Country, 0)
 	events.Events = make([]*Event, 0)
@@ -87,120 +129,130 @@ func ParseEvents(data []byte) (Events, error) {
 	// build countries lookup
 	countryLookup := make(map[string]*Country)
 
-	countriesI, ok := result["countries"]
-	if !ok {
-		return events, fmt.Errorf("cannot get 'countries'")
-	}
-	countriesD := countriesI.(map[string]interface{})
-
-	for countryId, countryI := range countriesD {
-		if countryId == "0" {
-			continue
-		}
-		countryD := countryI.(map[string]interface{})
-
-		urlI, ok := countryD["url"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'countries/%s/url'", countryId)
-		}
-
-		boundsI, ok := countryD["bounds"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'countries/%s/bounds'", countryId)
-		}
-		boundsD := boundsI.([]interface{})
-		if len(boundsD) != 4 {
+	for countryId, countryD := range eventsJson.Counties {
+		if len(countryD.Bounds) != 4 {
 			return events, fmt.Errorf("invalid size of 'countries/%s/bounds'", countryId)
 		}
 		bounds := make([]LatLng, 2)
-		bounds[0].Lat = boundsD[0].(float64)
-		bounds[0].Lng = boundsD[1].(float64)
-		bounds[1].Lat = boundsD[2].(float64)
-		bounds[1].Lng = boundsD[3].(float64)
+		bounds[0].Lat = countryD.Bounds[0]
+		bounds[0].Lng = countryD.Bounds[1]
+		bounds[1].Lat = countryD.Bounds[2]
+		bounds[1].Lng = countryD.Bounds[3]
 
-		country := &Country{urlI.(string), bounds, make([]*Event, 0)}
+		country := &Country{countryD.Url, bounds, make([]*Event, 0)}
 		events.Countries = append(events.Countries, country)
 		countryLookup[countryId] = country
 	}
 
-	eventsI, ok := result["events"]
-	if !ok {
-		return events, fmt.Errorf("cannot get 'events'")
-	}
-	eventsD := eventsI.(map[string]interface{})
-
-	featuresI, ok := eventsD["features"]
-	if !ok {
-		return events, fmt.Errorf("cannot get 'events/features'")
-	}
-
-	featuresD := featuresI.([]interface{})
-	for _, featureI := range featuresD {
-		featureD := featureI.(map[string]interface{})
-
-		geometryI, ok := featureD["geometry"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'events/features/geometry'")
+	for _, featureD := range eventsJson.Events.Features {
+		if featureD.Geometry.Type != "Point" {
+			return events, fmt.Errorf("'events/features/geometry/type' = '%s' (expected: 'Point')", featureD.Geometry.Type)
 		}
-		geometryD := geometryI.(map[string]interface{})
-		geoTypeI, ok := geometryD["type"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'events/features/geometry/type'")
-		}
-		if geoTypeI.(string) != "Point" {
-			return events, fmt.Errorf("'events/features/geometry/type' = '%s' (expected: 'Point')", geoTypeI.(string))
-		}
-		geoCoordinatesI, ok := geometryD["coordinates"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'events/features/geometry/coordinates'")
-		}
-		geoCoordinatesD := geoCoordinatesI.([]interface{})
-		if len(geoCoordinatesD) != 2 {
+		if len(featureD.Geometry.Coordinates) != 2 {
 			return events, fmt.Errorf("invalid size of 'events/features/geometry/coordinates'")
 		}
-		coordinates := LatLng{geoCoordinatesD[0].(float64), geoCoordinatesD[1].(float64)}
+		coordinates := LatLng{featureD.Geometry.Coordinates[0], featureD.Geometry.Coordinates[1]}
 
-		propertiesI, ok := featureD["properties"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'events/features/properties'")
-		}
-
-		propertiesD := propertiesI.(map[string]interface{})
-		nameI, ok := propertiesD["eventname"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'events/features/properties/eventname'")
-		}
-		longNameI, ok := propertiesD["EventLongName"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'events/features/properties/EventLongName'")
-		}
-		shortNameI, ok := propertiesD["EventShortName"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'events/features/properties/EventShortName'")
-		}
-		locationI, ok := propertiesD["EventLocation"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'events/features/properties/EventLocation'")
-		}
-		countryCodeI, ok := propertiesD["countrycode"]
-		if !ok {
-			return events, fmt.Errorf("cannot get 'events/features/properties/countrycode'")
-		}
-
-		name := nameI.(string)
-		countryCode := fmt.Sprintf("%.0f", countryCodeI.(float64))
-
+		countryCode := fmt.Sprintf("%d", featureD.Properties.CountryCode)
 		country, ok := countryLookup[countryCode]
 		if !ok {
-			return events, fmt.Errorf("failed to lookup country '%s' (event '%s')", countryCode, name)
+			return events, fmt.Errorf("failed to lookup country '%s' (event '%s')", countryCode, featureD.Properties.Name)
 		}
 
 		eventType := EVENTTYPE_REGULAR
+		switch featureD.Properties.SeriesId {
+		case 1:
+			eventType = EVENTTYPE_REGULAR
+		case 2:
+			eventType = EVENTTYPE_JUNIOR
+		default:
+			return events, fmt.Errorf("invalid seriesId '%d' (event '%s')", featureD.Properties.SeriesId, featureD.Properties.Name)
+		}
 
-		event := &Event{name, longNameI.(string), shortNameI.(string), locationI.(string), coordinates, country, eventType}
+		event := &Event{featureD.Properties.Name, featureD.Properties.LongName, featureD.Properties.ShortName, featureD.Properties.Location, coordinates, country, eventType}
 		country.Events = append(country.Events, event)
 		events.Events = append(events.Events, event)
 	}
+	/*
+		eventsI, ok := result["events"]
+		if !ok {
+			return events, fmt.Errorf("cannot get 'events'")
+		}
+		eventsD := eventsI.(map[string]interface{})
+
+		featuresI, ok := eventsD["features"]
+		if !ok {
+			return events, fmt.Errorf("cannot get 'events/features'")
+		}
+
+		featuresD := featuresI.([]interface{})
+		for _, featureI := range featuresD {
+			featureD := featureI.(map[string]interface{})
+
+			geometryI, ok := featureD["geometry"]
+			if !ok {
+				return events, fmt.Errorf("cannot get 'events/features/geometry'")
+			}
+			geometryD := geometryI.(map[string]interface{})
+			geoTypeI, ok := geometryD["type"]
+			if !ok {
+				return events, fmt.Errorf("cannot get 'events/features/geometry/type'")
+			}
+			if geoTypeI.(string) != "Point" {
+				return events, fmt.Errorf("'events/features/geometry/type' = '%s' (expected: 'Point')", geoTypeI.(string))
+			}
+			geoCoordinatesI, ok := geometryD["coordinates"]
+			if !ok {
+				return events, fmt.Errorf("cannot get 'events/features/geometry/coordinates'")
+			}
+			geoCoordinatesD := geoCoordinatesI.([]interface{})
+			if len(geoCoordinatesD) != 2 {
+				return events, fmt.Errorf("invalid size of 'events/features/geometry/coordinates'")
+			}
+			coordinates := LatLng{geoCoordinatesD[0].(float64), geoCoordinatesD[1].(float64)}
+
+			propertiesI, ok := featureD["properties"]
+			if !ok {
+				return events, fmt.Errorf("cannot get 'events/features/properties'")
+			}
+
+			propertiesD := propertiesI.(map[string]interface{})
+			nameI, ok := propertiesD["eventname"]
+			if !ok {
+				return events, fmt.Errorf("cannot get 'events/features/properties/eventname'")
+			}
+			longNameI, ok := propertiesD["EventLongName"]
+			if !ok {
+				return events, fmt.Errorf("cannot get 'events/features/properties/EventLongName'")
+			}
+			shortNameI, ok := propertiesD["EventShortName"]
+			if !ok {
+				return events, fmt.Errorf("cannot get 'events/features/properties/EventShortName'")
+			}
+			locationI, ok := propertiesD["EventLocation"]
+			if !ok {
+				return events, fmt.Errorf("cannot get 'events/features/properties/EventLocation'")
+			}
+			countryCodeI, ok := propertiesD["countrycode"]
+			if !ok {
+				return events, fmt.Errorf("cannot get 'events/features/properties/countrycode'")
+			}
+
+			name := nameI.(string)
+			countryCode := fmt.Sprintf("%.0f", countryCodeI.(float64))
+
+			country, ok := countryLookup[countryCode]
+			if !ok {
+				return events, fmt.Errorf("failed to lookup country '%s' (event '%s')", countryCode, name)
+			}
+
+			eventType := EVENTTYPE_REGULAR
+
+			event := &Event{name, longNameI.(string), shortNameI.(string), locationI.(string), coordinates, country, eventType}
+			country.Events = append(country.Events, event)
+			events.Events = append(events.Events, event)
+		}
+	*/
 
 	return events, nil
 }
