@@ -8,7 +8,10 @@ import (
 )
 
 func ParseDate(s string) (time.Time, error) {
-	return time.Parse("02/01/2006", s)
+	if t, err := time.Parse("02/01/2006", s); err == nil {
+		return t, nil
+	}
+	return time.Parse("2006-01-02", s)
 }
 
 func ParseDuration(s string) (time.Duration, error) {
