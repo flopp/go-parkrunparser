@@ -19,9 +19,11 @@ func (p Parkrunner) IsUnknown() bool {
 
 type Finisher struct {
 	*Parkrunner
-	AgeGroup    AgeGroup
-	Time        time.Duration
-	Achievement Achievement
+	AgeGroup              AgeGroup
+	Time                  time.Duration
+	Achievement           Achievement
+	NumberOfRuns          int
+	NumberOfVolunteerings int
 }
 
 func (f Finisher) IsUnknown() bool {
@@ -87,10 +89,24 @@ func ParseResults(buf []byte) (Results, error) {
 				}
 			}
 
-			event.Finishers = append(event.Finishers, Finisher{&Parkrunner{id, name}, ageGroup, runTime, achievement})
+			runs := 0
+			if i, err := strconv.Atoi(match[3]); err != nil {
+				return Results{}, fmt.Errorf("runner row %d - while parsing #runs: %w", row, err)
+			} else {
+				runs = i
+			}
+
+			vols := 0
+			if i, err := strconv.Atoi(match[4]); err != nil {
+				return Results{}, fmt.Errorf("runner row %d - while parsing #vols: %w", row, err)
+			} else {
+				runs = i
+			}
+
+			event.Finishers = append(event.Finishers, Finisher{&Parkrunner{id, name}, ageGroup, runTime, achievement, runs, vols})
 		} else if match := reRunnerRowUnknown.FindStringSubmatch(match0[0]); match != nil {
 			name := html.UnescapeString(match[1])
-			event.Finishers = append(event.Finishers, Finisher{&Parkrunner{"", name}, AgeGroup{}, 0, AchievementNone})
+			event.Finishers = append(event.Finishers, Finisher{&Parkrunner{"", name}, AgeGroup{}, 0, AchievementNone, 0, 0})
 		} else {
 			return Results{}, fmt.Errorf("runner row %d - invalid format: %s", row, match0[0])
 		}
