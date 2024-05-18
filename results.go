@@ -89,18 +89,14 @@ func ParseResults(buf []byte) (Results, error) {
 				}
 			}
 
-			runs := 0
-			if i, err := strconv.Atoi(match[3]); err != nil {
+			runs, err := strconv.Atoi(match[3])
+			if err != nil {
 				return Results{}, fmt.Errorf("runner row %d - while parsing #runs: %w", row, err)
-			} else {
-				runs = i
 			}
 
-			vols := 0
-			if i, err := strconv.Atoi(match[4]); err != nil {
+			vols, err := strconv.Atoi(match[4])
+			if err != nil {
 				return Results{}, fmt.Errorf("runner row %d - while parsing #vols: %w", row, err)
-			} else {
-				runs = i
 			}
 
 			event.Finishers = append(event.Finishers, Finisher{&Parkrunner{id, name}, ageGroup, runTime, achievement, runs, vols})
