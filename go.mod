@@ -1,3 +1,3 @@
-module github.com/flopp/go-parkrunparser
+module github.com/markdiss/go-parkrunparser
 
 go 1.22
