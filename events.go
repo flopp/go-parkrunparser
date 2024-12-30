@@ -134,10 +134,10 @@ func ParseEvents(data []byte) (Events, error) {
 			return events, fmt.Errorf("invalid size of 'countries/%s/bounds'", countryId)
 		}
 		bounds := make([]LatLng, 2)
-		bounds[0].Lat = countryD.Bounds[0]
-		bounds[0].Lng = countryD.Bounds[1]
-		bounds[1].Lat = countryD.Bounds[2]
-		bounds[1].Lng = countryD.Bounds[3]
+		bounds[0].Lat = countryD.Bounds[1]
+		bounds[0].Lng = countryD.Bounds[0]
+		bounds[1].Lat = countryD.Bounds[3]
+		bounds[1].Lng = countryD.Bounds[2]
 
 		country := &Country{countryD.Url, bounds, make([]*Event, 0)}
 		events.Countries = append(events.Countries, country)
@@ -151,7 +151,7 @@ func ParseEvents(data []byte) (Events, error) {
 		if len(featureD.Geometry.Coordinates) != 2 {
 			return events, fmt.Errorf("invalid size of 'events/features/geometry/coordinates'")
 		}
-		coordinates := LatLng{featureD.Geometry.Coordinates[0], featureD.Geometry.Coordinates[1]}
+		coordinates := LatLng{featureD.Geometry.Coordinates[1], featureD.Geometry.Coordinates[0]}
 
 		countryCode := fmt.Sprintf("%d", featureD.Properties.CountryCode)
 		country, ok := countryLookup[countryCode]
