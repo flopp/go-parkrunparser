@@ -10,3 +10,10 @@ A Go module to parse various parkrun webpages
 * `results/123`, `latestresults` -> `func ParseResults(buf []byte) (Results, error)`
 
 Note: the package will *not download* any files from the parkrun webpage!
+
+## Users
+
+go-parkrunparser is currently used by
+
+* https://gitbug.com/flopp/parkrun-map
+* https://gitbug.com/flopp/parkrun-milestones
