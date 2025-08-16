@@ -96,4 +96,6 @@ func TestParse(t *testing.T) {
 	loadParkrun(t, "test-data/se-broparken-84.gz", 84, "2024-04-20", 24, 7)
 	loadParkrun(t, "test-data/uk-hamsterleyforest-62.gz", 62, "2023-03-18", 24, 14)
 	loadParkrun(t, "test-data/uk-gateshead-566.gz", 566, "2024-12-07", 183, 20)
+	loadParkrun(t, "test-data/de-dietenbach-199.gz", 199, "2025-08-16", 113, 14)
+
 }
