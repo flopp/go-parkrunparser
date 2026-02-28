@@ -80,7 +80,6 @@ func ParseResults(buf []byte) (Results, error) {
 
 	// runners
 	for row, match0 := range reRunnerRow0.FindAllStringSubmatch(data, -1) {
-		fmt.Printf("runner row %d: %s\n", row, match0[1])
 		if match := reRunnerRow.FindStringSubmatch(match0[0]); match != nil {
 			name := html.UnescapeString(match[1])
 			ageGroup, err := ParseAgeGroup(match[2])
