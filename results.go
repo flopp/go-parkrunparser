@@ -48,7 +48,7 @@ var reRunnerRowUnknown = regexp.MustCompile(`^<tr class="Results-table-row" data
 var reTime = regexp.MustCompile(`Results-table-td--time[^"]*&#10;\s*"><div class="compact">(\d?:?\d\d:\d\d)</div>`)
 
 // new voluteers table
-var reVolunteerRow3 = regexp.MustCompile(`<tr class="Volunteers-table-row" data-name="([^"]+")[^>]*>\s*<td class="Volunteers-table-td Volunteers-table-td--name"[^>]*>\s*<div class="compact"><a href="[^"]+/(\d+)/?"`)
+var reVolunteerRow3 = regexp.MustCompile(`<tr class="Volunteers-table-row" data-name="([^"]+)"[^>]*>\s*<td class="Volunteers-table-td Volunteers-table-td--name"[^>]*>\s*<div class="compact"><a href="[^"]+/(\d+)/?"`)
 
 func ParseResults(buf []byte) (Results, error) {
 	reNewline := regexp.MustCompile(`\r?\n`)
