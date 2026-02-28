@@ -39,17 +39,26 @@ type Results struct {
 	Volunteers         []Parkrunner
 }
 
-var reDateIndex = regexp.MustCompile(`<h3><span class="format-date">([^<]+)</span><span class="spacer">[^<]*</span><span>#([0-9]+)</span></h3>`)
+var reDateIndex = regexp.MustCompile(`<h3>\s*<span class="format-date">([^<]+)</span><span class="spacer">[^<]*</span>\s*<span>#([0-9]+)</span>\s*</h3>`)
 var reVolunteerRow1 = regexp.MustCompile(`<a href='\./athletehistory/\?athleteNumber=(\d+)'>([^<]+)</a>`)
 var reVolunteerRow2 = regexp.MustCompile(`<a href="/[^/]+/parkrunner/(\d+)">([^<]+)</a>`)
-var reRunnerRow0 = regexp.MustCompile(`<tr class="Results-table-row" [^<]*><td class="Results-table-td Results-table-td--position">\d+</td><td class="Results-table-td Results-table-td--name"><div class="compact">(<a href="[^"]*/\d+/?")?.*?</tr>`)
-var reRunnerRow = regexp.MustCompile(`^<tr class="Results-table-row" data-name="([^"]*)" data-agegroup="([^"]*)" data-club="[^"]*" (?:data-groups="[^"]*" )?data-gender="[^"]*" data-position="\d+" data-runs="(\d+)" data-vols="(\d+)" data-agegrade="[^"]*" data-achievement="([^"]*)"><td class="Results-table-td Results-table-td--position">\d+</td><td class="Results-table-td Results-table-td--name"><div class="compact"><a href="[^"]*/(\d+)/?"`)
+var reRunnerRow0 = regexp.MustCompile(`<tr class="Results-table-row"[^<]*><td class="Results-table-td Results-table-td--position">\d+</td><td class="Results-table-td Results-table-td--name"><div class="compact"[^>]*>(<a href="[^"]*/\d+/?")?.*?</tr>`)
+var reRunnerRow = regexp.MustCompile(`^<tr class="Results-table-row"\s+data-name="([^"]*)"\s+data-agegroup="([^"]*)"\s+data-club="[^"]*"(?:\s+data-groups="[^"]*")?\s+data-gender="[^"]*"\s+data-position="\d+"\s+data-runs="(\d+)" data-vols="(\d+)" data-agegrade="[^"]*" data-achievement="([^"]*)"><td class="Results-table-td Results-table-td--position">\d+</td><td class="Results-table-td Results-table-td--name"><div class="compact"[^>]*><a href="[^"]*/(\d+)/?"`)
 var reRunnerRowUnknown = regexp.MustCompile(`^<tr class="Results-table-row" data-name="([^"]*)" data-agegroup="" data-club="" (?:data-groups="" )?data-position="\d+" data-runs="0" data-agegrade="0" data-achievement=""><td class="Results-table-td Results-table-td--position">\d+</td><td class="Results-table-td Results-table-td--name"><div class="compact">.*`)
 var reTime = regexp.MustCompile(`Results-table-td--time[^"]*&#10;\s*"><div class="compact">(\d?:?\d\d:\d\d)</div>`)
 
+// new voluteers table
+var reVolunteerRow3 = regexp.MustCompile(`<tr class="Volunteers-table-row" data-name="([^"]+")[^>]*>\s*<td class="Volunteers-table-td Volunteers-table-td--name"[^>]*>\s*<div class="compact"><a href="[^"]+/(\d+)/?"`)
+
 func ParseResults(buf []byte) (Results, error) {
 	reNewline := regexp.MustCompile(`\r?\n`)
+	reMultiSpaces := regexp.MustCompile(`\s+`)
+	reAngleSpace := regexp.MustCompile(`> `)
+	reSpaceAngle := regexp.MustCompile(` <`)
 	data := reNewline.ReplaceAllString(string(buf), " ")
+	data = reMultiSpaces.ReplaceAllString(data, " ")
+	data = reAngleSpace.ReplaceAllString(data, ">")
+	data = reSpaceAngle.ReplaceAllString(data, "<")
 
 	var event Results
 
@@ -71,6 +80,7 @@ func ParseResults(buf []byte) (Results, error) {
 
 	// runners
 	for row, match0 := range reRunnerRow0.FindAllStringSubmatch(data, -1) {
+		fmt.Printf("runner row %d: %s\n", row, match0[1])
 		if match := reRunnerRow.FindStringSubmatch(match0[0]); match != nil {
 			name := html.UnescapeString(match[1])
 			ageGroup, err := ParseAgeGroup(match[2])
@@ -119,6 +129,11 @@ func ParseResults(buf []byte) (Results, error) {
 	for _, match := range reVolunteerRow2.FindAllStringSubmatch(data, -1) {
 		id := match[1]
 		name := html.UnescapeString(match[2])
+		event.Volunteers = append(event.Volunteers, Parkrunner{id, name})
+	}
+	for _, match := range reVolunteerRow3.FindAllStringSubmatch(data, -1) {
+		id := match[2]
+		name := html.UnescapeString(match[1])
 		event.Volunteers = append(event.Volunteers, Parkrunner{id, name})
 	}
 	event.NumberOfVolunteers = len(event.Volunteers)
