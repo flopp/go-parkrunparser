@@ -49,6 +49,7 @@ func TestParseAgeGroup(t *testing.T) {
 		{"VM80-84", "80-84", SEX_MALE, false},
 		{"VM85-89", "85-89", SEX_MALE, false},
 		{"MWC", "WC", SEX_MALE, false},
+		{"MRS", "RS", SEX_MALE, false},
 
 		{"JH10", "10", SEX_MALE, false},
 		{"JH11-14", "11-14", SEX_MALE, false},
@@ -168,6 +169,7 @@ func TestParseAgeGroup(t *testing.T) {
 		{"VW80-84", "80-84", SEX_FEMALE, false},
 		{"VW85-89", "85-89", SEX_FEMALE, false},
 		{"WWC", "WC", SEX_FEMALE, false},
+		{"WRS", "RS", SEX_FEMALE, false},
 
 		{"", "??", SEX_UNKNOWN, false},
 		{"BAD", "", SEX_UNKNOWN, true},

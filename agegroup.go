@@ -32,6 +32,7 @@ type AgeGroup struct {
 
 var reAgeGroup = regexp.MustCompile(`^[A-Z]?([fFnKkNvVwWhHmM])((?:\d+-\d+)|(?:\d+)|(?:---))$`)
 var reAgeGroupWC = regexp.MustCompile(`^([fFnKkNvVwWhHmM])WC$`)
+var reAgeGroupRS = regexp.MustCompile(`^([fFnKkNvVwWhHmM])RS$`)
 
 func getSex(s string) Sex {
 	if strings.Contains("hHmM", s) {
@@ -52,6 +53,9 @@ func ParseAgeGroup(s string) (AgeGroup, error) {
 	}
 	if match := reAgeGroupWC.FindStringSubmatch(s); match != nil {
 		return AgeGroup{s, "WC", getSex(match[1])}, nil
+	}
+	if match := reAgeGroupRS.FindStringSubmatch(s); match != nil {
+		return AgeGroup{s, "RS", getSex(match[1])}, nil
 	}
 
 	return AgeGroup{s, "??", SEX_UNKNOWN}, fmt.Errorf("unknown age group: %s", s)
